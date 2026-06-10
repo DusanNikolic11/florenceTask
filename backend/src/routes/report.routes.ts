@@ -6,6 +6,7 @@ import {
   createReport,
   updateReport,
   deleteReport,
+  listReportInstances,
 } from '../controllers/report.controller';
 
 const router = Router();
@@ -15,6 +16,7 @@ router.use(requireAuth);
 router.get('/', listReports);
 router.post('/', createReport);
 router.get('/:id', getReport);
+router.get('/:id/instances', listReportInstances);
 router.patch('/:id', updateReport);
 router.delete('/:id', deleteReport);
 

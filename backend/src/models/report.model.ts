@@ -6,6 +6,7 @@ export interface IReport extends Document {
   filenamePattern: string;
   frequencyDays: number;
   enabled: boolean;
+  lastGeneratedAt: Date | null;
 }
 
 const reportSchema = new Schema<IReport>(
@@ -37,6 +38,10 @@ const reportSchema = new Schema<IReport>(
       type: Boolean,
       required: true,
       default: true,
+    },
+    lastGeneratedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
