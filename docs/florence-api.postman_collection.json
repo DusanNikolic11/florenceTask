@@ -2,14 +2,19 @@
   "info": {
     "name": "Florence Task API",
     "_postman_id": "f10rence-api-collection-v1",
-    "description": "Integration tests for the Florence Task API. Run the Authentication requests first — the Login request automatically saves the token to the `authToken` collection variable used by all subsequent requests.",
+    "description": "Integration tests for the Florence Task API.\n\nRun order: Authentication → Documents → Reports → Internal → Auth Guards.\n\n**Randomization:** The Register pre-request script mints a `runId` and derives all run-scoped variables from it (`userEmail`, `docFilename`, `docFilenameUpdated`, `reportPattern`). This lets the collection run repeatedly without conflicts.\n\n**File upload:** Set Postman's working directory (Settings → General → Working directory) to the repository root so that the relative path `docs/test-fixtures/sample-upload.txt` resolves correctly.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl",    "value": "http://localhost:3000", "type": "string" },
-    { "key": "authToken",  "value": "",                      "type": "string" },
-    { "key": "documentId", "value": "",                      "type": "string" },
-    { "key": "reportId",   "value": "",                      "type": "string" }
+    { "key": "baseUrl",            "value": "http://localhost:3000", "type": "string" },
+    { "key": "authToken",          "value": "",                      "type": "string" },
+    { "key": "documentId",         "value": "",                      "type": "string" },
+    { "key": "reportId",           "value": "",                      "type": "string" },
+    { "key": "runId",              "value": "",                      "type": "string" },
+    { "key": "userEmail",          "value": "",                      "type": "string" },
+    { "key": "docFilename",        "value": "",                      "type": "string" },
+    { "key": "docFilenameUpdated", "value": "",                      "type": "string" },
+    { "key": "reportPattern",      "value": "",                      "type": "string" }
   ],
   "item": [
     {
@@ -17,19 +22,25 @@
       "item": [
         {
           "name": "Register",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Test1234!\"\n}"
-            }
-          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const runId = Math.random().toString(36).substring(2, 8).toUpperCase();",
+                  "pm.collectionVariables.set('runId',              runId);",
+                  "pm.collectionVariables.set('userEmail',          `dusannikolic11+${runId}@gmail.com`);",
+                  "pm.collectionVariables.set('docFilename',        `2024_06_${runId}.pdf`);",
+                  "pm.collectionVariables.set('docFilenameUpdated', `2024_06_${runId}_v2.pdf`);",
+                  "pm.collectionVariables.set('reportPattern',      `*06_${runId}*`);"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
                   "pm.test('Response contains accessToken', () => {",
@@ -37,27 +48,24 @@
                   "  pm.expect(body).to.have.property('accessToken');",
                   "  pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
-        },
-        {
-          "name": "Login",
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Test1234!\"\n}"
-            }
-          },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Test1234!\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response contains accessToken', () => {",
@@ -65,34 +73,34 @@
                   "  pm.expect(body).to.have.property('accessToken');",
                   "  pm.collectionVariables.set('authToken', body.accessToken);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
-        },
-        {
-          "name": "Login — wrong password (expects 403)",
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"wrongpassword\"\n}"
-            }
-          },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Test1234!\"\n}" }
+          }
+        },
+        {
+          "name": "Login — wrong password (expects 403)",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test('Status is 403 Forbidden', () => pm.response.to.have.status(403));"
-                ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 403 Forbidden', () => pm.response.to.have.status(403));"]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"wrongpassword\"\n}" }
+          }
         }
       ]
     },
@@ -101,6 +109,26 @@
       "item": [
         {
           "name": "Upload Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Response contains document fields and stores ID', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('_id');",
+                  "  pm.expect(body).to.have.property('Filename', pm.collectionVariables.get('docFilename'));",
+                  "  pm.expect(body).to.have.property('FileLocation');",
+                  "  pm.expect(body).to.have.property('Size');",
+                  "  pm.expect(body).to.have.property('MD5');",
+                  "  pm.collectionVariables.set('documentId', body._id);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
@@ -110,58 +138,22 @@
               "formdata": [
                 {
                   "key": "file",
-                  "description": "Select a local file to upload (e.g. report_2021_06.pdf)",
+                  "description": "Path is relative to Postman working directory — set it to the repo root.",
                   "type": "file",
-                  "src": []
+                  "src": "docs/test-fixtures/sample-upload.txt"
                 },
-                {
-                  "key": "filename",
-                  "value": "2021_06.pdf",
-                  "type": "text"
-                }
+                { "key": "filename", "value": "{{docFilename}}", "type": "text" }
               ]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
-                  "pm.test('Response contains document fields', () => {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body).to.have.property('_id');",
-                  "  pm.expect(body).to.have.property('Filename');",
-                  "  pm.expect(body).to.have.property('FileLocation');",
-                  "  pm.expect(body).to.have.property('Size');",
-                  "  pm.expect(body).to.have.property('MD5');",
-                  "  pm.collectionVariables.set('documentId', body._id);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         },
         {
           "name": "List Documents (page 1)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/documents?page=1&limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "documents"],
-              "query": [
-                { "key": "page",  "value": "1" },
-                { "key": "limit", "value": "20" }
-              ]
-            }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response is paginated', () => {",
@@ -172,37 +164,58 @@
                   "  pm.expect(body).to.have.property('limit', 20);",
                   "  pm.expect(body).to.have.property('totalPages').that.is.a('number');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
-        },
-        {
-          "name": "Get Document by ID",
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}"] }
-          },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents?page=1&limit=20",
+              "host": ["{{baseUrl}}"], "path": ["api", "documents"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Get Document by ID",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response matches saved document', () => {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body._id).to.eql(pm.collectionVariables.get('documentId'));",
+                  "  pm.expect(pm.response.json()._id).to.eql(pm.collectionVariables.get('documentId'));",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}"] }
+          }
         },
         {
           "name": "Update Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Filename was updated', () => {",
+                  "  pm.expect(pm.response.json().Filename).to.eql(pm.collectionVariables.get('docFilenameUpdated'));",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PATCH",
             "header": [
@@ -210,86 +223,101 @@
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"Filename\": \"2022_06_updated.pdf\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Filename was updated', () => {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body.Filename).to.eql('2022_06_updated.pdf');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+            "body": { "mode": "raw", "raw": "{\n  \"Filename\": \"{{docFilenameUpdated}}\"\n}" }
+          }
         },
         {
           "name": "Download Document File",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/file", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "file"] }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Content-Disposition header is present', () => {",
                   "  pm.expect(pm.response.headers.get('content-disposition')).to.include('attachment');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}/file", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}", "file"] }
+          }
         },
         {
           "name": "Get Non-existent Document (expects 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/documents/000000000000000000000000", "host": ["{{baseUrl}}"], "path": ["api", "documents", "000000000000000000000000"] }
-          },
+          }
+        },
+        {
+          "name": "Delete Document",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"
-                ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 204 No Content', () => pm.response.to.have.status(204));"]
               }
             }
-          ]
-        },
-        {
-          "name": "Delete Document",
+          ],
           "request": {
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/documents/{{documentId}}", "host": ["{{baseUrl}}"], "path": ["api", "documents", "{{documentId}}"] }
-          },
+          }
+        },
+        {
+          "name": "Re-create Document (restores documentId for report generation)",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 204 No Content', () => pm.response.to.have.status(204));"
-                ],
-                "type": "text/javascript"
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Document re-created and documentId updated', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('_id');",
+                  "  pm.expect(body.Filename).to.eql(pm.collectionVariables.get('docFilename'));",
+                  "  pm.collectionVariables.set('documentId', body._id);",
+                  "});"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/documents", "host": ["{{baseUrl}}"], "path": ["api", "documents"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "description": "Same fixture file as Upload Document.",
+                  "type": "file",
+                  "src": "docs/test-fixtures/sample-upload.txt"
+                },
+                { "key": "filename", "value": "{{docFilename}}", "type": "text" }
+              ]
+            }
+          }
         }
       ]
     },
@@ -298,41 +326,26 @@
       "item": [
         {
           "name": "Create Report",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "url": { "raw": "{{baseUrl}}/api/reports", "host": ["{{baseUrl}}"], "path": ["api", "reports"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Monthly 06 Report\",\n  \"filenamePattern\": \"*06*.pdf\",\n  \"frequencyDays\": 7\n}"
-            }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
                   "pm.test('Response contains report fields', () => {",
                   "  const body = pm.response.json();",
                   "  pm.expect(body).to.have.property('_id');",
                   "  pm.expect(body).to.have.property('name', 'Monthly 06 Report');",
-                  "  pm.expect(body).to.have.property('filenamePattern', '*06*.pdf');",
+                  "  pm.expect(body).to.have.property('filenamePattern', pm.collectionVariables.get('reportPattern'));",
                   "  pm.expect(body).to.have.property('frequencyDays', 7);",
                   "  pm.expect(body).to.have.property('enabled', true);",
                   "  pm.collectionVariables.set('reportId', body._id);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
-        },
-        {
-          "name": "Create Report — missing required field (expects 400)",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -340,42 +353,37 @@
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": { "raw": "{{baseUrl}}/api/reports", "host": ["{{baseUrl}}"], "path": ["api", "reports"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Incomplete Report\"\n}"
-            }
-          },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Monthly 06 Report\",\n  \"filenamePattern\": \"{{reportPattern}}\",\n  \"frequencyDays\": 7\n}" }
+          }
+        },
+        {
+          "name": "Create Report — missing required field (expects 400)",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));"
-                ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));"]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/reports", "host": ["{{baseUrl}}"], "path": ["api", "reports"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Incomplete Report\"\n}" }
+          }
         },
         {
           "name": "List Reports (page 1)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/reports?page=1&limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reports"],
-              "query": [
-                { "key": "page",  "value": "1" },
-                { "key": "limit", "value": "20" }
-              ]
-            }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response is paginated', () => {",
@@ -386,23 +394,27 @@
                   "  pm.expect(body).to.have.property('limit', 20);",
                   "  pm.expect(body).to.have.property('totalPages').that.is.a('number');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
-        },
-        {
-          "name": "Get Report by ID",
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}"] }
-          },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports?page=1&limit=20",
+              "host": ["{{baseUrl}}"], "path": ["api", "reports"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Get Report by ID",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response matches saved report', () => {",
@@ -410,30 +422,23 @@
                   "  pm.expect(body._id).to.eql(pm.collectionVariables.get('reportId'));",
                   "  pm.expect(body.name).to.eql('Monthly 06 Report');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}"] }
+          }
         },
         {
           "name": "Update Report",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"frequencyDays\": 14,\n  \"enabled\": false\n}"
-            }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Report was updated', () => {",
@@ -441,68 +446,73 @@
                   "  pm.expect(body.frequencyDays).to.eql(14);",
                   "  pm.expect(body.enabled).to.eql(false);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"frequencyDays\": 14,\n  \"enabled\": false\n}" }
+          }
         },
         {
           "name": "List Report Instances",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is wrapped in data', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('data').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/instances", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "instances"] }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is an array', () => {",
-                  "  pm.expect(pm.response.json()).to.be.an('array');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         },
         {
           "name": "Subscribe to Report",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/subscribe", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "subscribe"] },
-            "body": { "mode": "raw", "raw": "" }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response shows subscribed: true', () => {",
                   "  pm.expect(pm.response.json().subscribed).to.eql(true);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/subscribe", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "subscribe"] },
+            "body": { "mode": "raw", "raw": "" }
+          }
         },
         {
           "name": "Get Subscription Status",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/subscription", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "subscription"] }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response has subscribed field', () => {",
@@ -510,95 +520,147 @@
                   "  pm.expect(body).to.have.property('subscribed');",
                   "  pm.expect(body.subscribed).to.be.a('boolean');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/subscription", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "subscription"] }
+          }
         },
         {
           "name": "List My Subscribed Report IDs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is wrapped in data and contains this run\\'s reportId', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('data').that.is.an('array');",
+                  "  pm.expect(body.data).to.include(pm.collectionVariables.get('reportId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/reports/subscriptions", "host": ["{{baseUrl}}"], "path": ["api", "reports", "subscriptions"] }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is an array of IDs', () => {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body).to.be.an('array');",
-                  "  pm.expect(body).to.include(pm.collectionVariables.get('reportId'));",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         },
         {
           "name": "Unsubscribe from Report",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/subscribe", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "subscribe"] }
-          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Response shows subscribed: false', () => {",
                   "  pm.expect(pm.response.json().subscribed).to.eql(false);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/subscribe", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "subscribe"] }
+          }
         },
         {
           "name": "Delete Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 204 No Content', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ],
           "request": {
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}"] }
-          },
+          }
+        },
+        {
+          "name": "Get Deleted Report (expects 404)",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test('Status is 204 No Content', () => pm.response.to.have.status(204));"
-                ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"]
               }
             }
-          ]
-        },
-        {
-          "name": "Get Deleted Report (expects 404)",
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}"] }
-          },
+          }
+        },
+        {
+          "name": "Re-create Report (restores reportId for trigger test)",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"
-                ],
-                "type": "text/javascript"
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Report re-created and reportId updated', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('_id');",
+                  "  pm.expect(body.filenamePattern).to.eql(pm.collectionVariables.get('reportPattern'));",
+                  "  pm.collectionVariables.set('reportId', body._id);",
+                  "});"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/reports", "host": ["{{baseUrl}}"], "path": ["api", "reports"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Monthly 06 Report\",\n  \"filenamePattern\": \"{{reportPattern}}\",\n  \"frequencyDays\": 7\n}" }
+          }
+        },
+        {
+          "name": "Re-subscribe to Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Re-subscribed successfully', () => {",
+                  "  pm.expect(pm.response.json().subscribed).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/subscribe", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "subscribe"] },
+            "body": { "mode": "raw", "raw": "" }
+          }
         }
       ]
     },
@@ -607,51 +669,93 @@
       "item": [
         {
           "name": "Trigger Report Generation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has queued count', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('queued', 1);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [],
             "url": { "raw": "{{baseUrl}}/internal/reports/trigger", "host": ["{{baseUrl}}"], "path": ["internal", "reports", "trigger"] },
             "body": { "mode": "raw", "raw": "" }
-          },
+          }
+        },
+        {
+          "name": "Trigger Report Generation — blocked from non-allowlisted IP (expects 403)",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Response has queued count', () => {",
-                  "  const body = pm.response.json();",
-                  "  pm.expect(body).to.have.property('queued').that.is.a('number');",
+                  "// When running locally the server always allows 127.0.0.1, so 200 is also acceptable.",
+                  "pm.test('Status is 200 or 403', () => {",
+                  "  pm.expect([200, 403]).to.include(pm.response.code);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
-        },
-        {
-          "name": "Trigger Report Generation — blocked from non-allowlisted IP (expects 403)",
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "X-Forwarded-For", "value": "1.2.3.4" }],
             "url": { "raw": "{{baseUrl}}/internal/reports/trigger", "host": ["{{baseUrl}}"], "path": ["internal", "reports", "trigger"] },
             "body": { "mode": "raw", "raw": "" }
-          },
+          }
+        },
+        {
+          "name": "Verify Report Instance Generated",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Allow 3 seconds for the Kafka consumer to process the generation message.",
+                  "// This busy-wait blocks the JS event loop — acceptable for a local integration test.",
+                  "const waitUntil = Date.now() + 3000;",
+                  "while (Date.now() < waitUntil) { /* wait */ }"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "// This test passes when called from a non-allowlisted IP.",
-                  "// When running locally the server allows 127.0.0.1, so it may return 200.",
-                  "pm.test('Status is 200 or 403', () => {",
-                  "  pm.expect([200, 403]).to.include(pm.response.code);",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('At least one report instance was generated', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('data').that.is.an('array');",
+                  "  pm.expect(body.data.length, 'Expected at least 1 generated instance').to.be.greaterThan(0);",
+                  "});",
+                  "pm.test('Generated instance has required fields', () => {",
+                  "  const instance = pm.response.json().data[0];",
+                  "  pm.expect(instance).to.have.property('reportId', pm.collectionVariables.get('reportId'));",
+                  "  pm.expect(instance).to.have.property('s3Location').that.is.a('string').and.not.empty;",
+                  "  pm.expect(instance).to.have.property('documentCount').that.is.a('number');",
+                  "  pm.expect(instance).to.have.property('generatedAt').that.is.a('string');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/{{reportId}}/instances", "host": ["{{baseUrl}}"], "path": ["api", "reports", "{{reportId}}", "instances"] }
+          }
         }
       ]
     },
@@ -660,41 +764,37 @@
       "item": [
         {
           "name": "Access documents without token (expects 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/documents", "host": ["{{baseUrl}}"], "path": ["api", "documents"] }
-          },
+          }
+        },
+        {
+          "name": "Access reports without token (expects 401)",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
-                ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"]
               }
             }
-          ]
-        },
-        {
-          "name": "Access reports without token (expects 401)",
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/reports", "host": ["{{baseUrl}}"], "path": ["api", "reports"] }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          }
         }
       ]
     }

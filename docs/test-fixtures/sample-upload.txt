@@ -1,0 +1,3 @@
+This is a sample file used by the Postman integration test collection.
+It is uploaded as a document during the "Upload Document" request.
+The file content is intentionally minimal — the backend stores it as-is in S3.

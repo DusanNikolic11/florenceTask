@@ -65,8 +65,8 @@ export class ReportService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
-  getInstances(reportId: string): Observable<ReportInstance[]> {
-    return this.http.get<ReportInstance[]>(`${this.base}/${reportId}/instances`);
+  getInstances(reportId: string): Observable<{ data: ReportInstance[] }> {
+    return this.http.get<{ data: ReportInstance[] }>(`${this.base}/${reportId}/instances`);
   }
 
   getSubscription(reportId: string): Observable<{ subscribed: boolean }> {
@@ -81,7 +81,7 @@ export class ReportService {
     return this.http.delete<{ subscribed: boolean }>(`${this.base}/${reportId}/subscribe`);
   }
 
-  getMySubscribedReportIds(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.base}/subscriptions`);
+  getMySubscribedReportIds(): Observable<{ data: string[] }> {
+    return this.http.get<{ data: string[] }>(`${this.base}/subscriptions`);
   }
 }
