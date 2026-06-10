@@ -1,0 +1,100 @@
+<div class="detail-wrapper">
+  <header class="topbar">
+    <button class="back-btn" (click)="goBack()">
+      ← Back to Dashboard
+    </button>
+    <h1 class="brand">DocVault</h1>
+  </header>
+
+  <main class="content">
+    <!-- Loading -->
+    <div class="state-placeholder" *ngIf="loading">
+      <div class="spinner dark"></div>
+      <span>Loading document…</span>
+    </div>
+
+    <ng-container *ngIf="!loading && document">
+      <!-- Title row -->
+      <div class="title-row">
+        <div class="doc-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <h2 *ngIf="!editMode" class="doc-title">{{ document.Filename }}</h2>
+          <input
+            *ngIf="editMode"
+            class="title-input"
+            type="text"
+            [(ngModel)]="editFilename"
+            placeholder="File name"
+          />
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="alert success" *ngIf="successMessage">{{ successMessage }}</div>
+      <div class="alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <!-- Metadata card -->
+      <div class="info-card">
+        <h3>File Details</h3>
+        <div class="meta-grid">
+          <div class="meta-row">
+            <span class="meta-label">ID</span>
+            <span class="meta-value mono">{{ document._id }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Size</span>
+            <span class="meta-value">{{ formatSize(document.Size) }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">MD5 Hash</span>
+            <span class="meta-value mono">{{ document.MD5 }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Storage</span>
+            <span class="meta-value mono truncate">{{ document.FileLocation }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Uploaded</span>
+            <span class="meta-value">{{ document.createdAt | date:'medium' }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Last Updated</span>
+            <span class="meta-value">{{ document.updatedAt | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <!-- Edit mode off -->
+        <ng-container *ngIf="!editMode">
+          <button class="btn btn-secondary" (click)="startEdit()">
+            Edit Name
+          </button>
+          <button class="btn btn-primary" [disabled]="downloading" (click)="downloadDocument()">
+            <span *ngIf="!downloading">Download</span>
+            <span *ngIf="downloading" class="spinner"></span>
+          </button>
+          <button class="btn btn-danger" [disabled]="deleting" (click)="deleteDocument()">
+            <span *ngIf="!deleting">Delete</span>
+            <span *ngIf="deleting" class="spinner"></span>
+          </button>
+        </ng-container>
+
+        <!-- Edit mode on -->
+        <ng-container *ngIf="editMode">
+          <button class="btn btn-ghost" (click)="cancelEdit()">Cancel</button>
+          <button class="btn btn-primary" [disabled]="saving" (click)="saveEdit()">
+            <span *ngIf="!saving">Save Changes</span>
+            <span *ngIf="saving" class="spinner"></span>
+          </button>
+        </ng-container>
+      </div>
+    </ng-container>
+  </main>
+</div>

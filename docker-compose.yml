@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: florence_mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - florence_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: florence_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/florencedb
+    depends_on:
+      - mongo
+    ports:
+      - "3000:3000"
+    networks:
+      - florence_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: florence_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+    networks:
+      - florence_net
+
+volumes:
+  mongo_data:
+
+networks:
+  florence_net:
+    driver: bridge

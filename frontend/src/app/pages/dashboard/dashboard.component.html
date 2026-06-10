@@ -1,0 +1,82 @@
+<div class="dashboard">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="brand">DocVault</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-ghost" (click)="logout()">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="page-title">
+      <h2>My Documents</h2>
+      <span class="doc-count">{{ documents.length }} file{{ documents.length !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <!-- Upload section -->
+    <div class="upload-card">
+      <h3>Upload a New File</h3>
+      <div class="upload-row">
+        <label class="file-label">
+          <input type="file" (change)="onFileSelected($event)" hidden />
+          <span class="file-btn">{{ selectedFile ? selectedFile.name : 'Choose file…' }}</span>
+        </label>
+        <input
+          *ngIf="selectedFile"
+          type="text"
+          class="filename-input"
+          placeholder="Display name (optional)"
+          [(ngModel)]="customFilename"
+        />
+        <button
+          class="btn-primary"
+          [disabled]="!selectedFile || uploading"
+          (click)="uploadFile()"
+        >
+          <span *ngIf="!uploading">Upload</span>
+          <span *ngIf="uploading" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <!-- Loading -->
+    <div class="state-placeholder" *ngIf="loading">
+      <div class="spinner dark"></div>
+      <span>Loading documents…</span>
+    </div>
+
+    <!-- Empty -->
+    <div class="state-placeholder" *ngIf="!loading && documents.length === 0 && !errorMessage">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z" />
+      </svg>
+      <p>No documents yet. Upload your first file above.</p>
+    </div>
+
+    <!-- Document list -->
+    <div class="doc-grid" *ngIf="!loading && documents.length > 0">
+      <div
+        class="doc-card"
+        *ngFor="let doc of documents"
+        (click)="openDocument(doc._id)"
+      >
+        <div class="doc-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div class="doc-info">
+          <span class="doc-name">{{ doc.Filename }}</span>
+          <span class="doc-meta">{{ formatSize(doc.Size) }} &bull; {{ doc.createdAt | date:'mediumDate' }}</span>
+        </div>
+        <div class="doc-arrow">›</div>
+      </div>
+    </div>
+  </main>
+</div>

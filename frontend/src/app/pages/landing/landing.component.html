@@ -1,0 +1,60 @@
+<div class="landing-wrapper">
+  <div class="card">
+    <div class="card-header">
+      <h1 class="logo">DocVault</h1>
+      <p class="tagline">Secure document storage and management</p>
+    </div>
+
+    <div class="tabs">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'login'"
+        (click)="setTab('login')"
+      >
+        Sign In
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'register'"
+        (click)="setTab('register')"
+      >
+        Register
+      </button>
+    </div>
+
+    <form class="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          [(ngModel)]="email"
+          name="email"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          placeholder="••••••••"
+          [(ngModel)]="password"
+          name="password"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <button class="submit-btn" type="submit" [disabled]="loading">
+        <span *ngIf="!loading">{{ activeTab === 'login' ? 'Sign In' : 'Create Account' }}</span>
+        <span *ngIf="loading" class="spinner"></span>
+      </button>
+    </form>
+  </div>
+</div>
