@@ -4,6 +4,7 @@ import { Readable } from 'stream';
 import { DocumentModel } from '../models/document.model';
 import { uploadToS3, deleteFromS3, extractS3Key, streamFromS3 } from '../config/aws/s3.service';
 import { ServiceError } from './errors';
+import { PaginatedResult } from '../types/pagination';
 
 export const createDocument = async (
   file: Express.Multer.File,
@@ -26,8 +27,16 @@ export const getDocumentById = async (id: string): Promise<InstanceType<typeof D
   return doc;
 };
 
-export const listDocuments = async (): Promise<InstanceType<typeof DocumentModel>[]> => {
-  return DocumentModel.find().sort({ createdAt: -1 });
+export const listDocuments = async (
+  page: number,
+  limit: number
+): Promise<PaginatedResult<InstanceType<typeof DocumentModel>>> => {
+  const skip = (page - 1) * limit;
+  const [data, total] = await Promise.all([
+    DocumentModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+    DocumentModel.countDocuments(),
+  ]);
+  return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const updateDocument = async (
