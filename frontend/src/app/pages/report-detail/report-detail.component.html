@@ -48,12 +48,44 @@
             <span class="meta-value">{{ report.enabled ? 'Active' : 'Paused' }}</span>
           </div>
           <div class="meta-row">
+            <span class="meta-label">Last Generated</span>
+            <span class="meta-value">
+              {{ report.lastGeneratedAt ? (report.lastGeneratedAt | date:'medium') : 'Never' }}
+            </span>
+          </div>
+          <div class="meta-row">
             <span class="meta-label">Created</span>
             <span class="meta-value">{{ report.createdAt | date:'medium' }}</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">Last Updated</span>
             <span class="meta-value">{{ report.updatedAt | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generated Instances -->
+      <div class="instances-card">
+        <h3>Generated Instances</h3>
+
+        <div class="instances-empty" *ngIf="instances.length === 0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p>No instances generated yet. The report will run automatically based on its frequency.</p>
+        </div>
+
+        <div class="instances-table" *ngIf="instances.length > 0">
+          <div class="table-header">
+            <span>Generated At</span>
+            <span>Documents Matched</span>
+            <span>S3 Location</span>
+          </div>
+          <div class="table-row" *ngFor="let instance of instances">
+            <span class="cell">{{ instance.generatedAt | date:'medium' }}</span>
+            <span class="cell center">{{ instance.documentCount }}</span>
+            <span class="cell mono truncate" [title]="instance.s3Location">{{ instance.s3Location }}</span>
           </div>
         </div>
       </div>

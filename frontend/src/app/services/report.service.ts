@@ -10,8 +10,17 @@ export interface ReportRecord {
   filenamePattern: string;
   frequencyDays: number;
   enabled: boolean;
+  lastGeneratedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ReportInstance {
+  _id: string;
+  reportId: string;
+  s3Location: string;
+  documentCount: number;
+  generatedAt: string;
 }
 
 export interface CreateReportPayload {
@@ -51,5 +60,9 @@ export class ReportService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
+  }
+
+  getInstances(reportId: string): Observable<ReportInstance[]> {
+    return this.http.get<ReportInstance[]>(`${this.base}/${reportId}/instances`);
   }
 }

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ReportService, ReportRecord } from '../../services/report.service';
+import { forkJoin } from 'rxjs';
+import { ReportService, ReportRecord, ReportInstance } from '../../services/report.service';
 
 @Component({
   selector: 'app-report-detail',
@@ -12,6 +13,7 @@ import { ReportService, ReportRecord } from '../../services/report.service';
 })
 export class ReportDetailComponent implements OnInit {
   report: ReportRecord | null = null;
+  instances: ReportInstance[] = [];
   loading = true;
   toggling = false;
   deleting = false;
@@ -34,9 +36,13 @@ export class ReportDetailComponent implements OnInit {
 
   load(id: string): void {
     this.loading = true;
-    this.reportService.get(id).subscribe({
-      next: (report) => {
+    forkJoin({
+      report: this.reportService.get(id),
+      instances: this.reportService.getInstances(id),
+    }).subscribe({
+      next: ({ report, instances }) => {
         this.report = report;
+        this.instances = instances;
         this.loading = false;
       },
       error: (err) => {

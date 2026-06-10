@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Report } from '../models/report.model';
+import { ReportInstance } from '../models/reportInstance.model';
 import { getCallerId } from '../middleware/auth.middleware';
 
 export const listReports = async (req: Request, res: Response): Promise<void> => {
@@ -98,6 +99,28 @@ export const deleteReport = async (req: Request, res: Response): Promise<void> =
     res.status(204).send();
   } catch (err) {
     console.error('Delete report error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const listReportInstances = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      res.status(404).json({ message: 'Report not found' });
+      return;
+    }
+    if (report.userId.toString() !== getCallerId(req)) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
+    const instances = await ReportInstance.find({ reportId: report._id }).sort({
+      generatedAt: -1,
+    });
+    res.json(instances);
+  } catch (err) {
+    console.error('List report instances error:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
