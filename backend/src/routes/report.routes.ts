@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.middleware';
 import {
-  listReports,
-  getReport,
-  createReport,
-  updateReport,
-  deleteReport,
-  listReportInstances,
+  listReportsHandler,
+  getReportHandler,
+  createReportHandler,
+  updateReportHandler,
+  deleteReportHandler,
+  listReportInstancesHandler,
 } from '../controllers/report.controller';
 import {
   subscribe,
@@ -19,15 +19,15 @@ const router = Router();
 
 router.use(requireAuth);
 
-router.get('/', listReports);
-router.post('/', createReport);
+router.get('/', listReportsHandler);
+router.post('/', createReportHandler);
 router.get('/subscriptions', listMySubscribedReportIds);
-router.get('/:id', getReport);
-router.get('/:id/instances', listReportInstances);
+router.get('/:id', getReportHandler);
+router.get('/:id/instances', listReportInstancesHandler);
 router.get('/:id/subscription', getSubscription);
 router.post('/:id/subscribe', subscribe);
 router.delete('/:id/subscribe', unsubscribe);
-router.patch('/:id', updateReport);
-router.delete('/:id', deleteReport);
+router.patch('/:id', updateReportHandler);
+router.delete('/:id', deleteReportHandler);
 
 export default router;

@@ -1,124 +1,74 @@
 import { Request, Response } from 'express';
-import crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
-import { DocumentModel } from '../models/document.model';
 import {
-  uploadToS3,
-  deleteFromS3,
-  extractS3Key,
-  streamFromS3,
-} from '../config/aws/s3.service';
+  createDocument,
+  getDocumentById,
+  listDocuments,
+  updateDocument,
+  deleteDocument,
+  streamDocumentFile,
+} from '../services/document.service';
+import { handleError } from '../services/errors';
 
-export const createDocument = async (req: Request, res: Response): Promise<void> => {
+export const createDocumentHandler = async (req: Request, res: Response): Promise<void> => {
+  if (!req.file) {
+    res.status(400).json({ message: 'File is required' });
+    return;
+  }
+
   try {
-    if (!req.file) {
-      res.status(400).json({ message: 'File is required' });
-      return;
-    }
-
-    const filename = req.body.filename || req.file.originalname;
-    const buffer = req.file.buffer;
-    const size = buffer.length;
-    const md5 = crypto.createHash('md5').update(buffer).digest('hex');
-    const key = `documents/${uuidv4()}-${filename}`;
-
-    const fileLocation = await uploadToS3(key, buffer, req.file.mimetype);
-
-    const doc = await DocumentModel.create({
-      Filename: filename,
-      FileLocation: fileLocation,
-      Size: size,
-      MD5: md5,
-    });
-
+    const doc = await createDocument(req.file, req.body.filename);
     res.status(201).json(doc);
   } catch (err) {
-    console.error('Create document error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    handleError(err, res, 'createDocument');
   }
 };
 
-export const getDocument = async (req: Request, res: Response): Promise<void> => {
+export const getDocumentHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const doc = await DocumentModel.findById(req.params.id);
-    if (!doc) {
-      res.status(404).json({ message: 'Document not found' });
-      return;
-    }
+    const doc = await getDocumentById(req.params.id);
     res.json(doc);
   } catch (err) {
-    console.error('Get document error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    handleError(err, res, 'getDocument');
   }
 };
 
-export const listDocuments = async (_req: Request, res: Response): Promise<void> => {
+export const listDocumentsHandler = async (_req: Request, res: Response): Promise<void> => {
   try {
-    const docs = await DocumentModel.find().sort({ createdAt: -1 });
+    const docs = await listDocuments();
     res.json(docs);
   } catch (err) {
-    console.error('List documents error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    handleError(err, res, 'listDocuments');
   }
 };
 
-export const updateDocument = async (req: Request, res: Response): Promise<void> => {
+export const updateDocumentHandler = async (req: Request, res: Response): Promise<void> => {
+  const { _id, ...updates } = req.body;
+  void _id;
+
   try {
-    const { _id, ...updates } = req.body;
-    void _id;
-
-    const doc = await DocumentModel.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!doc) {
-      res.status(404).json({ message: 'Document not found' });
-      return;
-    }
-
+    const doc = await updateDocument(req.params.id, updates);
     res.json(doc);
   } catch (err) {
-    console.error('Update document error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    handleError(err, res, 'updateDocument');
   }
 };
 
-export const deleteDocument = async (req: Request, res: Response): Promise<void> => {
+export const deleteDocumentHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const doc = await DocumentModel.findById(req.params.id);
-    if (!doc) {
-      res.status(404).json({ message: 'Document not found' });
-      return;
-    }
-
-    const key = extractS3Key(doc.FileLocation);
-    await deleteFromS3(key);
-    await doc.deleteOne();
-
+    await deleteDocument(req.params.id);
     res.status(204).send();
   } catch (err) {
-    console.error('Delete document error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    handleError(err, res, 'deleteDocument');
   }
 };
 
-export const downloadDocument = async (req: Request, res: Response): Promise<void> => {
+export const downloadDocumentHandler = async (req: Request, res: Response): Promise<void> => {
   try {
-    const doc = await DocumentModel.findById(req.params.id);
-    if (!doc) {
-      res.status(404).json({ message: 'Document not found' });
-      return;
-    }
-
-    const key = extractS3Key(doc.FileLocation);
-    const stream = await streamFromS3(key);
-
-    res.setHeader('Content-Disposition', `attachment; filename="${doc.Filename}"`);
+    const { stream, filename } = await streamDocumentFile(req.params.id);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
     stream.pipe(res);
   } catch (err) {
-    console.error('Download document error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    handleError(err, res, 'downloadDocument');
   }
 };
