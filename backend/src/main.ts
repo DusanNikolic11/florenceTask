@@ -4,8 +4,8 @@ import cors from 'cors';
 import passport from 'passport';
 import { connectDatabase } from './config/database';
 import { configurePassport } from './config/passport';
-import { connectKafka, ConsumerGroup } from './config/kafka';
-import { consumerStarterRegistry } from './config/kafka/consumerRegistry';
+import { connectKafka } from './config/kafka';
+import { startAllConsumers } from './config/kafka/consumerRegistry';
 import { startReportCron } from './jobs/reportCron';
 import authRoutes from './routes/auth.routes';
 import documentRoutes from './routes/document.routes';
@@ -33,9 +33,7 @@ app.get('/health', (_req, res) => {
 const start = async (): Promise<void> => {
   await connectDatabase();
   await connectKafka();
-  for (const group of Object.values(ConsumerGroup)) {
-    await consumerStarterRegistry[group]();
-  }
+  await startAllConsumers();
   startReportCron();
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
