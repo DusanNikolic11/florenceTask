@@ -21,5 +21,31 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard],
   },
+  {
+    path: 'reports',
+    loadComponent: () =>
+      import('./pages/reports-list/reports-list.component').then((m) => m.ReportsListComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'reports/new',
+    loadComponent: () =>
+      import('./pages/report-form/report-form.component').then((m) => m.ReportFormComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'reports/:id',
+    loadComponent: () =>
+      import('./pages/report-detail/report-detail.component').then(
+        (m) => m.ReportDetailComponent
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'reports/:id/edit',
+    loadComponent: () =>
+      import('./pages/report-form/report-form.component').then((m) => m.ReportFormComponent),
+    canActivate: [authGuard],
+  },
   { path: '**', redirectTo: '' },
 ];

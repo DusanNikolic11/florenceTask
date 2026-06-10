@@ -1,0 +1,74 @@
+<div class="detail-wrapper">
+  <header class="topbar">
+    <button class="back-btn" (click)="goBack()">← Back to Reports</button>
+    <h1 class="brand">DocVault</h1>
+  </header>
+
+  <main class="content">
+    <div class="state-placeholder" *ngIf="loading">
+      <div class="spinner dark"></div>
+      <span>Loading report…</span>
+    </div>
+
+    <div class="error" *ngIf="errorMessage && !loading">{{ errorMessage }}</div>
+
+    <ng-container *ngIf="!loading && report">
+      <div class="title-row">
+        <div class="report-icon" [class.disabled]="!report.enabled">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="report-title">{{ report.name }}</h2>
+          <span class="badge" [class.enabled]="report.enabled" [class.disabled]="!report.enabled">
+            {{ report.enabled ? 'Enabled' : 'Disabled' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>Configuration</h3>
+        <div class="meta-grid">
+          <div class="meta-row">
+            <span class="meta-label">ID</span>
+            <span class="meta-value mono">{{ report._id }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Filename Pattern</span>
+            <span class="meta-value mono">{{ report.filenamePattern }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Frequency</span>
+            <span class="meta-value">Every {{ report.frequencyDays }} day{{ report.frequencyDays !== 1 ? 's' : '' }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Status</span>
+            <span class="meta-value">{{ report.enabled ? 'Active' : 'Paused' }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Created</span>
+            <span class="meta-value">{{ report.createdAt | date:'medium' }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Last Updated</span>
+            <span class="meta-value">{{ report.updatedAt | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" (click)="edit()">Edit</button>
+        <button class="btn btn-toggle" [disabled]="toggling" (click)="toggleEnabled()">
+          <span *ngIf="!toggling">{{ report.enabled ? 'Disable' : 'Enable' }}</span>
+          <span *ngIf="toggling" class="spinner"></span>
+        </button>
+        <button class="btn btn-danger" [disabled]="deleting" (click)="delete()">
+          <span *ngIf="!deleting">Delete</span>
+          <span *ngIf="deleting" class="spinner"></span>
+        </button>
+      </div>
+    </ng-container>
+  </main>
+</div>

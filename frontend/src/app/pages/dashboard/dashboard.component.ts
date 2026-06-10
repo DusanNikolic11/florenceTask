@@ -79,6 +79,10 @@ export class DashboardComponent implements OnInit {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
+  goToReports(): void {
+    this.router.navigate(['/reports']);
+  }
+
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/']);

@@ -1,0 +1,96 @@
+<div class="form-wrapper">
+  <header class="topbar">
+    <button class="back-btn" (click)="cancel()">
+      ← {{ isEditMode ? 'Back to Report' : 'Back to Reports' }}
+    </button>
+    <h1 class="brand">DocVault</h1>
+  </header>
+
+  <main class="content">
+    <div class="state-placeholder" *ngIf="loading">
+      <div class="spinner dark"></div>
+      <span>Loading…</span>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div class="form-header">
+        <h2>{{ isEditMode ? 'Edit Report' : 'Configure Report' }}</h2>
+        <p>{{ isEditMode ? 'Update the settings for this report.' : 'Set up a new report to track files matching a pattern.' }}</p>
+      </div>
+
+      <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <form class="form-card" (ngSubmit)="submit()">
+        <div class="field">
+          <label for="name">Report Name <span class="required">*</span></label>
+          <input
+            id="name"
+            type="text"
+            placeholder="e.g. Weekly Invoice Report"
+            [(ngModel)]="name"
+            name="name"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="pattern">
+            Filename Pattern <span class="required">*</span>
+            <span class="hint">Use * as a wildcard. e.g. <code>invoice_*.pdf</code></span>
+          </label>
+          <input
+            id="pattern"
+            type="text"
+            placeholder="e.g. invoice_*.pdf"
+            [(ngModel)]="filenamePattern"
+            name="filenamePattern"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="frequency">
+            Generation Frequency
+            <span class="hint">How often the report runs (1–90 days). Default is 7.</span>
+          </label>
+          <div class="frequency-row">
+            <span class="freq-label">Every</span>
+            <input
+              id="frequency"
+              type="number"
+              [(ngModel)]="frequencyDays"
+              name="frequencyDays"
+              min="1"
+              max="90"
+              class="frequency-input"
+            />
+            <span class="freq-label">day{{ frequencyDays !== 1 ? 's' : '' }}</span>
+          </div>
+          <div class="freq-range-bar">
+            <input
+              type="range"
+              min="1"
+              max="90"
+              [(ngModel)]="frequencyDays"
+              name="frequencyDaysSlider"
+              class="range-slider"
+            />
+            <div class="range-labels">
+              <span>1 day</span>
+              <span>45 days</span>
+              <span>90 days</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving">
+            <span *ngIf="!saving">{{ isEditMode ? 'Save Changes' : 'Create Report' }}</span>
+            <span *ngIf="saving" class="spinner"></span>
+          </button>
+        </div>
+      </form>
+    </ng-container>
+  </main>
+</div>

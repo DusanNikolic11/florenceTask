@@ -2,6 +2,10 @@
   <header class="topbar">
     <div class="topbar-left">
       <h1 class="brand">DocVault</h1>
+      <nav class="nav-links">
+        <button class="nav-link active">Documents</button>
+        <button class="nav-link" (click)="goToReports()">Reports</button>
+      </nav>
     </div>
     <div class="topbar-right">
       <button class="btn-ghost" (click)="logout()">Sign Out</button>

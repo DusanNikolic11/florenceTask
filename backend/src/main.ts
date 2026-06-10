@@ -6,6 +6,7 @@ import { connectDatabase } from './config/database';
 import { configurePassport } from './config/passport';
 import authRoutes from './routes/auth.routes';
 import documentRoutes from './routes/document.routes';
+import reportRoutes from './routes/report.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ configurePassport();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
