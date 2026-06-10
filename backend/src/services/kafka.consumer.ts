@@ -1,8 +1,8 @@
-import { getConsumer, REPORTS_TOPIC } from '../config/kafka';
+import { getReportProcessorConsumer, REPORTS_TOPIC } from '../config/kafka';
 import { processReport } from './reportGeneration.service';
 
 export const startReportConsumer = async (): Promise<void> => {
-  const consumer = getConsumer();
+  const consumer = getReportProcessorConsumer();
 
   await consumer.subscribe({ topic: REPORTS_TOPIC, fromBeginning: false });
 

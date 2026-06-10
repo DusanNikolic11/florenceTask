@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { ReportService, ReportRecord } from '../../services/report.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -13,10 +14,12 @@ import { AuthService } from '../../services/auth.service';
 })
 export class ReportsListComponent implements OnInit {
   reports: ReportRecord[] = [];
+  subscribedIds = new Set<string>();
   loading = true;
   errorMessage = '';
   togglingId: string | null = null;
   deletingId: string | null = null;
+  subscribingId: string | null = null;
 
   constructor(
     private reportService: ReportService,
@@ -30,9 +33,13 @@ export class ReportsListComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.reportService.list().subscribe({
-      next: (reports) => {
+    forkJoin({
+      reports: this.reportService.list(),
+      subscribedIds: this.reportService.getMySubscribedReportIds(),
+    }).subscribe({
+      next: ({ reports, subscribedIds }) => {
         this.reports = reports;
+        this.subscribedIds = new Set(subscribedIds);
         this.loading = false;
       },
       error: () => {
@@ -40,6 +47,10 @@ export class ReportsListComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  isSubscribed(reportId: string): boolean {
+    return this.subscribedIds.has(reportId);
   }
 
   openDetail(id: string): void {
@@ -78,6 +89,29 @@ export class ReportsListComponent implements OnInit {
       error: () => {
         this.errorMessage = 'Failed to delete report.';
         this.deletingId = null;
+      },
+    });
+  }
+
+  toggleSubscription(report: ReportRecord, event: MouseEvent): void {
+    event.stopPropagation();
+    this.subscribingId = report._id;
+    const obs = this.isSubscribed(report._id)
+      ? this.reportService.unsubscribe(report._id)
+      : this.reportService.subscribe(report._id);
+
+    obs.subscribe({
+      next: (res) => {
+        if (res.subscribed) {
+          this.subscribedIds.add(report._id);
+        } else {
+          this.subscribedIds.delete(report._id);
+        }
+        this.subscribingId = null;
+      },
+      error: () => {
+        this.errorMessage = 'Failed to update subscription.';
+        this.subscribingId = null;
       },
     });
   }

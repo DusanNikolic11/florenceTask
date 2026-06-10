@@ -6,6 +6,8 @@ import { connectDatabase } from './config/database';
 import { configurePassport } from './config/passport';
 import { connectKafka } from './config/kafka';
 import { startReportConsumer } from './services/kafka.consumer';
+import { startReportEventsConsumer } from './services/reportEvents.consumer';
+import { startEmailNotificationsConsumer } from './services/emailNotifications.consumer';
 import { startReportCron } from './jobs/reportCron';
 import authRoutes from './routes/auth.routes';
 import documentRoutes from './routes/document.routes';
@@ -34,6 +36,8 @@ const start = async (): Promise<void> => {
   await connectDatabase();
   await connectKafka();
   await startReportConsumer();
+  await startReportEventsConsumer();
+  await startEmailNotificationsConsumer();
   startReportCron();
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

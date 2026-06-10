@@ -64,6 +64,28 @@
         </div>
       </div>
 
+      <div class="actions">
+        <button class="btn btn-secondary" (click)="edit()">Edit</button>
+        <button class="btn btn-toggle" [disabled]="toggling" (click)="toggleEnabled()">
+          <span *ngIf="!toggling">{{ report.enabled ? 'Disable' : 'Enable' }}</span>
+          <span *ngIf="toggling" class="spinner"></span>
+        </button>
+        <button
+          class="btn"
+          [class.btn-subscribe]="!subscribed"
+          [class.btn-subscribed]="subscribed"
+          [disabled]="subscribing"
+          (click)="toggleSubscription()"
+        >
+          <span *ngIf="!subscribing">{{ subscribed ? '🔔 Subscribed' : '🔕 Subscribe' }}</span>
+          <span *ngIf="subscribing" class="spinner"></span>
+        </button>
+        <button class="btn btn-danger" [disabled]="deleting" (click)="delete()">
+          <span *ngIf="!deleting">Delete</span>
+          <span *ngIf="deleting" class="spinner"></span>
+        </button>
+      </div>
+
       <!-- Generated Instances -->
       <div class="instances-card">
         <h3>Generated Instances</h3>
@@ -88,18 +110,6 @@
             <span class="cell mono truncate" [title]="instance.s3Location">{{ instance.s3Location }}</span>
           </div>
         </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn btn-secondary" (click)="edit()">Edit</button>
-        <button class="btn btn-toggle" [disabled]="toggling" (click)="toggleEnabled()">
-          <span *ngIf="!toggling">{{ report.enabled ? 'Disable' : 'Enable' }}</span>
-          <span *ngIf="toggling" class="spinner"></span>
-        </button>
-        <button class="btn btn-danger" [disabled]="deleting" (click)="delete()">
-          <span *ngIf="!deleting">Delete</span>
-          <span *ngIf="deleting" class="spinner"></span>
-        </button>
       </div>
     </ng-container>
   </main>

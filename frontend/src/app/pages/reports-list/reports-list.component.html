@@ -66,6 +66,16 @@
 
         <div class="report-actions">
           <button
+            class="action-btn subscribe"
+            [class.is-subscribed]="isSubscribed(report._id)"
+            [title]="isSubscribed(report._id) ? 'Unsubscribe' : 'Subscribe'"
+            [disabled]="subscribingId === report._id"
+            (click)="toggleSubscription(report, $event)"
+          >
+            <span *ngIf="subscribingId !== report._id">{{ isSubscribed(report._id) ? '🔔' : '🔕' }}</span>
+            <span *ngIf="subscribingId === report._id" class="spinner sm"></span>
+          </button>
+          <button
             class="action-btn toggle"
             [title]="report.enabled ? 'Disable' : 'Enable'"
             [disabled]="togglingId === report._id"
