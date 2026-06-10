@@ -7,7 +7,7 @@ import {
   deleteFromS3,
   extractS3Key,
   streamFromS3,
-} from '../services/s3.service';
+} from '../config/aws/s3.service';
 
 export const createDocument = async (req: Request, res: Response): Promise<void> => {
   try {

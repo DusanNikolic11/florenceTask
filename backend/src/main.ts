@@ -4,10 +4,8 @@ import cors from 'cors';
 import passport from 'passport';
 import { connectDatabase } from './config/database';
 import { configurePassport } from './config/passport';
-import { connectKafka } from './config/kafka';
-import { startReportConsumer } from './services/kafka.consumer';
-import { startReportEventsConsumer } from './services/reportEvents.consumer';
-import { startEmailNotificationsConsumer } from './services/emailNotifications.consumer';
+import { connectKafka, ConsumerGroup } from './config/kafka';
+import { consumerStarterRegistry } from './config/kafka/consumerRegistry';
 import { startReportCron } from './jobs/reportCron';
 import authRoutes from './routes/auth.routes';
 import documentRoutes from './routes/document.routes';
@@ -35,9 +33,9 @@ app.get('/health', (_req, res) => {
 const start = async (): Promise<void> => {
   await connectDatabase();
   await connectKafka();
-  await startReportConsumer();
-  await startReportEventsConsumer();
-  await startEmailNotificationsConsumer();
+  for (const group of Object.values(ConsumerGroup)) {
+    await consumerStarterRegistry[group]();
+  }
   startReportCron();
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
