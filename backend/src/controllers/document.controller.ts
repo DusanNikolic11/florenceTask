@@ -8,6 +8,7 @@ import {
   streamDocumentFile,
 } from '../services/document.service';
 import { handleError } from '../services/errors';
+import { parsePaginationParams } from '../types/pagination';
 
 export const createDocumentHandler = async (req: Request, res: Response): Promise<void> => {
   if (!req.file) {
@@ -32,10 +33,11 @@ export const getDocumentHandler = async (req: Request, res: Response): Promise<v
   }
 };
 
-export const listDocumentsHandler = async (_req: Request, res: Response): Promise<void> => {
+export const listDocumentsHandler = async (req: Request, res: Response): Promise<void> => {
+  const { page, limit } = parsePaginationParams(req.query.page, req.query.limit);
   try {
-    const docs = await listDocuments();
-    res.json(docs);
+    const result = await listDocuments(page, limit);
+    res.json(result);
   } catch (err) {
     handleError(err, res, 'listDocuments');
   }

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { PaginatedResponse } from '../types/pagination';
 
 export interface DocumentRecord {
   _id: string;
@@ -19,8 +20,10 @@ export class DocumentService {
 
   constructor(private http: HttpClient) {}
 
-  list(): Observable<DocumentRecord[]> {
-    return this.http.get<DocumentRecord[]>(this.base);
+  list(page = 1, limit = 20): Observable<PaginatedResponse<DocumentRecord>> {
+    return this.http.get<PaginatedResponse<DocumentRecord>>(this.base, {
+      params: { page: String(page), limit: String(limit) },
+    });
   }
 
   get(id: string): Observable<DocumentRecord> {

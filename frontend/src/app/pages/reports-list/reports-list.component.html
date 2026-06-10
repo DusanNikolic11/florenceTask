@@ -16,7 +16,7 @@
     <div class="page-title">
       <div>
         <h2>Reports</h2>
-        <span class="count">{{ reports.length }} configured</span>
+        <span class="count">{{ total }} configured</span>
       </div>
       <button class="btn-primary" (click)="createNew()">+ Configure Report</button>
     </div>
@@ -97,6 +97,21 @@
 
         <div class="report-arrow">›</div>
       </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="!loading && totalPages > 1">
+      <button
+        class="page-btn"
+        [disabled]="page === 1"
+        (click)="changePage(page - 1)"
+      >← Prev</button>
+      <span class="page-info">Page {{ page }} of {{ totalPages }}</span>
+      <button
+        class="page-btn"
+        [disabled]="page === totalPages"
+        (click)="changePage(page + 1)"
+      >Next →</button>
     </div>
   </main>
 </div>

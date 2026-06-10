@@ -1,9 +1,15 @@
 import { Report } from '../models/report.model';
 import { ReportInstance } from '../models/reportInstance.model';
 import { ServiceError } from './errors';
+import { PaginatedResult } from '../types/pagination';
 
-export const listReports = async (userId: string) => {
-  return Report.find({ userId }).sort({ createdAt: -1 });
+export const listReports = async (userId: string, page: number, limit: number): Promise<PaginatedResult<InstanceType<typeof Report>>> => {
+  const skip = (page - 1) * limit;
+  const [data, total] = await Promise.all([
+    Report.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Report.countDocuments({ userId }),
+  ]);
+  return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const getReport = async (id: string, userId: string) => {

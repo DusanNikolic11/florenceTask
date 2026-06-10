@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { DocumentService, DocumentRecord } from '../../services/document.service';
 import { AuthService } from '../../services/auth.service';
 
+const PAGE_SIZE = 20;
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -14,6 +16,11 @@ import { AuthService } from '../../services/auth.service';
 })
 export class DashboardComponent implements OnInit {
   documents: DocumentRecord[] = [];
+  total = 0;
+  page = 1;
+  totalPages = 1;
+  readonly pageSize = PAGE_SIZE;
+
   loading = true;
   errorMessage = '';
   uploading = false;
@@ -32,9 +39,11 @@ export class DashboardComponent implements OnInit {
 
   loadDocuments(): void {
     this.loading = true;
-    this.documentService.list().subscribe({
-      next: (docs) => {
-        this.documents = docs;
+    this.documentService.list(this.page, this.pageSize).subscribe({
+      next: ({ data, total, totalPages }) => {
+        this.documents = data;
+        this.total = total;
+        this.totalPages = totalPages;
         this.loading = false;
       },
       error: () => {
@@ -42,6 +51,12 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  changePage(newPage: number): void {
+    if (newPage < 1 || newPage > this.totalPages) return;
+    this.page = newPage;
+    this.loadDocuments();
   }
 
   onFileSelected(event: Event): void {
@@ -60,6 +75,7 @@ export class DashboardComponent implements OnInit {
         this.selectedFile = null;
         this.customFilename = '';
         this.uploading = false;
+        this.page = 1;
         this.loadDocuments();
       },
       error: () => {

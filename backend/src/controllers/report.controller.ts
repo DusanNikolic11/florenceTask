@@ -9,11 +9,13 @@ import {
   listReportInstances,
 } from '../services/report.service';
 import { handleError } from '../services/errors';
+import { parsePaginationParams } from '../types/pagination';
 
 export const listReportsHandler = async (req: Request, res: Response): Promise<void> => {
+  const { page, limit } = parsePaginationParams(req.query.page, req.query.limit);
   try {
-    const reports = await listReports(getCallerId(req));
-    res.json(reports);
+    const result = await listReports(getCallerId(req), page, limit);
+    res.json(result);
   } catch (err) {
     handleError(err, res, 'listReports');
   }

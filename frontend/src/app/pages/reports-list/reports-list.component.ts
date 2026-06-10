@@ -5,6 +5,8 @@ import { forkJoin } from 'rxjs';
 import { ReportService, ReportRecord } from '../../services/report.service';
 import { AuthService } from '../../services/auth.service';
 
+const PAGE_SIZE = 20;
+
 @Component({
   selector: 'app-reports-list',
   standalone: true,
@@ -15,6 +17,11 @@ import { AuthService } from '../../services/auth.service';
 export class ReportsListComponent implements OnInit {
   reports: ReportRecord[] = [];
   subscribedIds = new Set<string>();
+  total = 0;
+  page = 1;
+  totalPages = 1;
+  readonly pageSize = PAGE_SIZE;
+
   loading = true;
   errorMessage = '';
   togglingId: string | null = null;
@@ -34,11 +41,13 @@ export class ReportsListComponent implements OnInit {
   load(): void {
     this.loading = true;
     forkJoin({
-      reports: this.reportService.list(),
+      reports: this.reportService.list(this.page, this.pageSize),
       subscribedIds: this.reportService.getMySubscribedReportIds(),
     }).subscribe({
       next: ({ reports, subscribedIds }) => {
-        this.reports = reports;
+        this.reports = reports.data;
+        this.total = reports.total;
+        this.totalPages = reports.totalPages;
         this.subscribedIds = new Set(subscribedIds);
         this.loading = false;
       },
@@ -47,6 +56,12 @@ export class ReportsListComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  changePage(newPage: number): void {
+    if (newPage < 1 || newPage > this.totalPages) return;
+    this.page = newPage;
+    this.load();
   }
 
   isSubscribed(reportId: string): boolean {
@@ -83,7 +98,12 @@ export class ReportsListComponent implements OnInit {
     this.deletingId = report._id;
     this.reportService.delete(report._id).subscribe({
       next: () => {
+        this.total--;
         this.reports = this.reports.filter((r) => r._id !== report._id);
+        if (this.reports.length === 0 && this.page > 1) {
+          this.page--;
+          this.load();
+        }
         this.deletingId = null;
       },
       error: () => {
