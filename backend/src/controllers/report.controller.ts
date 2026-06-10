@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { Report } from '../models/report.model';
-
-const getCallerId = (req: Request): string => (req.user as Express.User)._id.toString();
+import { getCallerId } from '../middleware/auth.middleware';
 
 export const listReports = async (req: Request, res: Response): Promise<void> => {
   try {

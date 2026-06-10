@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 
+export const getCallerId = (req: Request): string =>
+  (req.user as Express.User)._id.toString();
+
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   passport.authenticate('jwt', { session: false }, (err: unknown, user: Express.User | false) => {
     if (err) {
