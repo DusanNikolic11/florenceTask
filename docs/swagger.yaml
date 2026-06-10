@@ -1,0 +1,744 @@
+openapi: 3.0.3
+info:
+  title: DocVault API
+  description: Document management and reporting API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Registration and login
+  - name: Documents
+    description: File upload, metadata management and download
+  - name: Reports
+    description: Report configuration management
+  - name: Report Instances
+    description: Generated report results
+  - name: Subscriptions
+    description: Subscribe to report generation notifications
+  - name: Internal
+    description: Internal endpoints — restricted by IP allowlist
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    DocumentRecord:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 64a1b2c3d4e5f6a7b8c9d0e1
+        Filename:
+          type: string
+          example: invoice_jan.pdf
+        FileLocation:
+          type: string
+          example: s3://my-bucket/documents/uuid-invoice_jan.pdf
+        Size:
+          type: integer
+          example: 204800
+        MD5:
+          type: string
+          example: d41d8cd98f00b204e9800998ecf8427e
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ReportRecord:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 64a1b2c3d4e5f6a7b8c9d0e2
+        userId:
+          type: string
+          example: 64a1b2c3d4e5f6a7b8c9d0e0
+        name:
+          type: string
+          example: June Invoice Report
+        filenamePattern:
+          type: string
+          example: "*06*.pdf"
+        frequencyDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+          example: 7
+        enabled:
+          type: boolean
+          example: true
+        lastGeneratedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ReportInstance:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 64a1b2c3d4e5f6a7b8c9d0e3
+        reportId:
+          type: string
+          example: 64a1b2c3d4e5f6a7b8c9d0e2
+        s3Location:
+          type: string
+          example: s3://my-bucket/reports/reportId/uuid-2024-06-10.csv
+        documentCount:
+          type: integer
+          example: 3
+        generatedAt:
+          type: string
+          format: date-time
+
+    SubscriptionStatus:
+      type: object
+      properties:
+        subscribed:
+          type: boolean
+          example: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Unauthorized: invalid or missing token
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 1
+                  example: secretpassword
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Email and password are required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  example: secretpassword
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Email and password are required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Documents ─────────────────────────────────────────────────────────────
+
+  /api/documents:
+    get:
+      tags: [Documents]
+      summary: List all documents
+      responses:
+        '200':
+          description: Array of document records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Documents]
+      summary: Upload a new document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload
+                filename:
+                  type: string
+                  description: Optional display name (defaults to original filename)
+                  example: invoice_jan.pdf
+      responses:
+        '201':
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentRecord'
+        '400':
+          description: File is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/documents/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: MongoDB ObjectId of the document
+
+    get:
+      tags: [Documents]
+      summary: Get a document record by ID
+      responses:
+        '200':
+          description: Document record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags: [Documents]
+      summary: Update a document record (any field except _id)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Filename:
+                  type: string
+                  example: renamed_invoice.pdf
+                FileLocation:
+                  type: string
+                Size:
+                  type: integer
+                MD5:
+                  type: string
+      responses:
+        '200':
+          description: Updated document record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Documents]
+      summary: Delete a document record and its S3 file
+      responses:
+        '204':
+          description: Document deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/documents/{id}/file:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Documents]
+      summary: Download the file associated with a document
+      responses:
+        '200':
+          description: File binary stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Reports ───────────────────────────────────────────────────────────────
+
+  /api/reports:
+    get:
+      tags: [Reports]
+      summary: List all reports owned by the authenticated user
+      responses:
+        '200':
+          description: Array of report records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Reports]
+      summary: Create a new report configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, filenamePattern]
+              properties:
+                name:
+                  type: string
+                  example: June Invoice Report
+                filenamePattern:
+                  type: string
+                  example: "*06*.pdf"
+                frequencyDays:
+                  type: integer
+                  minimum: 1
+                  maximum: 90
+                  default: 7
+                  example: 7
+      responses:
+        '201':
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRecord'
+        '400':
+          description: name and filenamePattern are required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/reports/subscriptions:
+    get:
+      tags: [Subscriptions]
+      summary: Get all report IDs the current user is subscribed to
+      responses:
+        '200':
+          description: Array of report ObjectIds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example: ["64a1b2c3d4e5f6a7b8c9d0e2"]
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/reports/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: MongoDB ObjectId of the report
+
+    get:
+      tags: [Reports]
+      summary: Get a specific report configuration
+      responses:
+        '200':
+          description: Report record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — not the owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags: [Reports]
+      summary: Update a report configuration (owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Updated Report Name
+                filenamePattern:
+                  type: string
+                  example: "*invoice*.pdf"
+                frequencyDays:
+                  type: integer
+                  minimum: 1
+                  maximum: 90
+                  example: 14
+                enabled:
+                  type: boolean
+                  example: false
+      responses:
+        '200':
+          description: Updated report record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — not the owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Reports]
+      summary: Delete a report configuration (owner only)
+      responses:
+        '204':
+          description: Report deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — not the owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Report Instances ──────────────────────────────────────────────────────
+
+  /api/reports/{id}/instances:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Report Instances]
+      summary: List all generated instances for a report (owner only)
+      responses:
+        '200':
+          description: Array of report instances sorted by generatedAt descending
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportInstance'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — not the owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Subscriptions ─────────────────────────────────────────────────────────
+
+  /api/reports/{id}/subscription:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Subscriptions]
+      summary: Check if the current user is subscribed to a report
+      responses:
+        '200':
+          description: Subscription status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/reports/{id}/subscribe:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      tags: [Subscriptions]
+      summary: Subscribe to report generation notifications
+      responses:
+        '200':
+          description: Successfully subscribed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Subscriptions]
+      summary: Unsubscribe from report generation notifications
+      responses:
+        '200':
+          description: Successfully unsubscribed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Internal ──────────────────────────────────────────────────────────────
+
+  /internal/reports/trigger:
+    post:
+      tags: [Internal]
+      summary: Manually trigger due report generation (IP allowlisted — no JWT required)
+      security: []
+      responses:
+        '200':
+          description: Due reports queued for generation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Due reports queued for generation
+        '403':
+          description: IP not in allowlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
