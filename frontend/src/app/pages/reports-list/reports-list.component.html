@@ -1,0 +1,92 @@
+<div class="page-wrapper">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="brand">DocVault</h1>
+      <nav class="nav-links">
+        <button class="nav-link" (click)="goToDashboard()">Documents</button>
+        <button class="nav-link active">Reports</button>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-ghost" (click)="logout()">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="page-title">
+      <div>
+        <h2>Reports</h2>
+        <span class="count">{{ reports.length }} configured</span>
+      </div>
+      <button class="btn-primary" (click)="createNew()">+ Configure Report</button>
+    </div>
+
+    <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <div class="state-placeholder" *ngIf="loading">
+      <div class="spinner dark"></div>
+      <span>Loading reports…</span>
+    </div>
+
+    <div class="state-placeholder" *ngIf="!loading && reports.length === 0 && !errorMessage">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z" />
+      </svg>
+      <p>No reports configured yet.</p>
+      <button class="btn-primary" (click)="createNew()">Configure your first report</button>
+    </div>
+
+    <div class="report-list" *ngIf="!loading && reports.length > 0">
+      <div
+        class="report-card"
+        *ngFor="let report of reports"
+        (click)="openDetail(report._id)"
+      >
+        <div class="report-icon" [class.disabled]="!report.enabled">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+
+        <div class="report-info">
+          <span class="report-name">{{ report.name }}</span>
+          <span class="report-meta">
+            Pattern: <code>{{ report.filenamePattern }}</code>
+            &bull; Every {{ report.frequencyDays }} day{{ report.frequencyDays !== 1 ? 's' : '' }}
+          </span>
+        </div>
+
+        <div class="report-status">
+          <span class="badge" [class.enabled]="report.enabled" [class.disabled]="!report.enabled">
+            {{ report.enabled ? 'Enabled' : 'Disabled' }}
+          </span>
+        </div>
+
+        <div class="report-actions">
+          <button
+            class="action-btn toggle"
+            [title]="report.enabled ? 'Disable' : 'Enable'"
+            [disabled]="togglingId === report._id"
+            (click)="toggleEnabled(report, $event)"
+          >
+            <span *ngIf="togglingId !== report._id">{{ report.enabled ? '⏸' : '▶' }}</span>
+            <span *ngIf="togglingId === report._id" class="spinner sm"></span>
+          </button>
+          <button
+            class="action-btn delete"
+            title="Delete"
+            [disabled]="deletingId === report._id"
+            (click)="deleteReport(report, $event)"
+          >
+            <span *ngIf="deletingId !== report._id">✕</span>
+            <span *ngIf="deletingId === report._id" class="spinner sm"></span>
+          </button>
+        </div>
+
+        <div class="report-arrow">›</div>
+      </div>
+    </div>
+  </main>
+</div>

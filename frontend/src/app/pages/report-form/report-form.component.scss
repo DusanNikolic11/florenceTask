@@ -1,0 +1,233 @@
+.form-wrapper {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
+  background: #0f3460;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.back-btn {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover { background: rgba(255, 255, 255, 0.15); }
+}
+
+.brand {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.content {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.state-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  color: #9ca3af;
+}
+
+.form-header {
+  margin-bottom: 1.75rem;
+
+  h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.4rem;
+  }
+
+  p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+.error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  input[type='text'],
+  input[type='number'] {
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #111827;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus {
+      border-color: #0f3460;
+      box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.1);
+    }
+
+    &::placeholder { color: #9ca3af; }
+  }
+}
+
+.required {
+  color: #ef4444;
+  font-size: 0.8rem;
+}
+
+.hint {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #9ca3af;
+
+  code {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #374151;
+    font-size: 0.78rem;
+  }
+}
+
+.frequency-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.freq-label {
+  font-size: 0.9rem;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.frequency-input {
+  width: 80px;
+  text-align: center;
+}
+
+.freq-range-bar {
+  margin-top: 0.5rem;
+}
+
+.range-slider {
+  width: 100%;
+  accent-color: #0f3460;
+  cursor: pointer;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btn {
+  padding: 0.7rem 1.5rem;
+  border-radius: 9px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  min-height: 44px;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-primary {
+  background: #0f3460;
+  color: #ffffff;
+  &:hover:not(:disabled) { background: #16213e; }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #6b7280;
+  border: 1.5px solid #d1d5db;
+  &:hover:not(:disabled) { background: #f9fafb; }
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+
+  &.dark {
+    width: 32px;
+    height: 32px;
+    border: 2.5px solid rgba(15, 52, 96, 0.2);
+    border-top-color: #0f3460;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
