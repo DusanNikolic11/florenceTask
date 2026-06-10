@@ -5,18 +5,8 @@ import { DocumentModel } from '../models/document.model';
 import { ReportInstance } from '../models/reportInstance.model';
 import { uploadToS3 } from '../config/aws/s3.service';
 import { sendReportEventMessage } from '../config/kafka';
-
-interface ProcessingResult {
-  filename: string;
-  result: number;
-}
-
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-const processDocument = async (filename: string): Promise<ProcessingResult> => {
-  await sleep(500);
-  return { filename, result: Math.floor(Math.random() * 10_000) };
-};
+import { processDocument } from './documentProcessor';
+import { ProcessingResult } from './documentProcessor';
 
 const buildCsv = (rows: ProcessingResult[]): string => {
   const header = 'filename,processingResult';

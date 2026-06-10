@@ -48,7 +48,7 @@ export class ReportsListComponent implements OnInit {
         this.reports = reports.data;
         this.total = reports.total;
         this.totalPages = reports.totalPages;
-        this.subscribedIds = new Set(subscribedIds);
+        this.subscribedIds = new Set(subscribedIds.data);
         this.loading = false;
       },
       error: () => {

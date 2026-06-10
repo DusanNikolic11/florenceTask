@@ -14,7 +14,7 @@ export const startReportCron = (): void => {
   console.log('[ReportCron] Scheduled (daily at midnight)');
 };
 
-export const triggerDueReports = async (): Promise<void> => {
+export const triggerDueReports = async (): Promise<number> => {
   const now = Date.now();
 
   const allReports = await Report.find({ enabled: true });
@@ -26,17 +26,21 @@ export const triggerDueReports = async (): Promise<void> => {
 
   if (dueReports.length === 0) {
     console.log('[ReportCron] No reports due');
-    return;
+    return 0;
   }
 
   console.log(`[ReportCron] ${dueReports.length} report(s) due, sending to Kafka`);
 
+  let queued = 0;
   for (const report of dueReports) {
     try {
       await sendReportMessage(report._id.toString());
       console.log(`[ReportCron] Queued report "${report.name}" (${report._id})`);
+      queued++;
     } catch (err) {
       console.error(`[ReportCron] Failed to queue report ${report._id}:`, err);
     }
   }
+
+  return queued;
 };

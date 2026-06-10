@@ -45,7 +45,7 @@ export class ReportDetailComponent implements OnInit {
     }).subscribe({
       next: ({ report, instances, subscription }) => {
         this.report = report;
-        this.instances = instances;
+        this.instances = instances.data;
         this.subscribed = subscription.subscribed;
         this.loading = false;
       },

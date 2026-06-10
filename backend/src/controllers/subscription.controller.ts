@@ -38,7 +38,7 @@ export const getSubscription = async (req: Request, res: Response): Promise<void
 export const listMySubscribedReportIds = async (req: Request, res: Response): Promise<void> => {
   try {
     const reportIds = await listSubscribedReportIds(getCallerId(req));
-    res.json(reportIds);
+    res.json({ data: reportIds });
   } catch (err) {
     handleError(err, res, 'listSubscribedReportIds');
   }

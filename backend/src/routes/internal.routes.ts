@@ -17,8 +17,8 @@ router.use(ipAllowlist);
  */
 router.post('/reports/trigger', async (_req: Request, res: Response): Promise<void> => {
   try {
-    await triggerDueReports();
-    res.json({ message: 'Due reports queued for generation' });
+    const queued = await triggerDueReports();
+    res.json({ message: 'Due reports queued for generation', queued });
   } catch (err) {
     console.error('[Internal] /reports/trigger error:', err);
     res.status(500).json({ message: 'Internal server error' });

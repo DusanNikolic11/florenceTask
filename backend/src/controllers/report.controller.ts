@@ -71,7 +71,7 @@ export const deleteReportHandler = async (req: Request, res: Response): Promise<
 export const listReportInstancesHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const instances = await listReportInstances(req.params.id, getCallerId(req));
-    res.json(instances);
+    res.json({ data: instances });
   } catch (err) {
     handleError(err, res, 'listReportInstances');
   }
