@@ -17,6 +17,8 @@ export class ReportDetailComponent implements OnInit {
   loading = true;
   toggling = false;
   deleting = false;
+  subscribed = false;
+  subscribing = false;
   errorMessage = '';
 
   constructor(
@@ -39,10 +41,12 @@ export class ReportDetailComponent implements OnInit {
     forkJoin({
       report: this.reportService.get(id),
       instances: this.reportService.getInstances(id),
+      subscription: this.reportService.getSubscription(id),
     }).subscribe({
-      next: ({ report, instances }) => {
+      next: ({ report, instances, subscription }) => {
         this.report = report;
         this.instances = instances;
+        this.subscribed = subscription.subscribed;
         this.loading = false;
       },
       error: (err) => {
@@ -81,6 +85,25 @@ export class ReportDetailComponent implements OnInit {
       error: () => {
         this.errorMessage = 'Failed to delete report.';
         this.deleting = false;
+      },
+    });
+  }
+
+  toggleSubscription(): void {
+    if (!this.report) return;
+    this.subscribing = true;
+    const obs = this.subscribed
+      ? this.reportService.unsubscribe(this.report._id)
+      : this.reportService.subscribe(this.report._id);
+
+    obs.subscribe({
+      next: (res) => {
+        this.subscribed = res.subscribed;
+        this.subscribing = false;
+      },
+      error: () => {
+        this.errorMessage = 'Failed to update subscription.';
+        this.subscribing = false;
       },
     });
   }

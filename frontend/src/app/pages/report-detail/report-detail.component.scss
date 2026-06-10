@@ -251,6 +251,7 @@
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  margin-bottom: 1.5rem;
 }
 
 .btn {
@@ -303,6 +304,20 @@
     border: 2.5px solid rgba(15, 52, 96, 0.2);
     border-top-color: #0f3460;
   }
+}
+
+.btn-subscribe {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1.5px solid #86efac;
+  &:hover:not(:disabled) { background: #dcfce7; }
+}
+
+.btn-subscribed {
+  background: #dcfce7;
+  color: #166534;
+  border: 1.5px solid #4ade80;
+  &:hover:not(:disabled) { background: #bbf7d0; }
 }
 
 .btn-secondary .spinner,

@@ -4,6 +4,7 @@ import { Report } from '../models/report.model';
 import { DocumentModel } from '../models/document.model';
 import { ReportInstance } from '../models/reportInstance.model';
 import { uploadToS3 } from './s3.service';
+import { sendReportEventMessage } from '../config/kafka';
 
 interface ProcessingResult {
   filename: string;
@@ -55,7 +56,7 @@ export const processReport = async (reportId: string): Promise<void> => {
 
   const s3Location = await uploadToS3(s3Key, csvBuffer, 'text/csv');
 
-  await ReportInstance.create({
+  const instance = await ReportInstance.create({
     reportId: report._id,
     s3Location,
     documentCount: matchedDocuments.length,
@@ -64,6 +65,12 @@ export const processReport = async (reportId: string): Promise<void> => {
 
   report.lastGeneratedAt = generatedAt;
   await report.save();
+
+  await sendReportEventMessage({
+    state: 'generated',
+    reportId: report._id.toString(),
+    reportInstanceId: instance._id.toString(),
+  });
 
   console.log(`[ReportGeneration] Report "${report.name}" generated successfully → ${s3Location}`);
 };

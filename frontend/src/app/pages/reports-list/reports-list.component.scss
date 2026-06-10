@@ -249,6 +249,16 @@
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  &.subscribe:hover:not(:disabled) {
+    background: #f0fdf4;
+    border-color: #86efac;
+  }
+
+  &.subscribe.is-subscribed {
+    background: #dcfce7;
+    border-color: #4ade80;
+  }
+
   &.toggle:hover:not(:disabled) {
     background: #eff6ff;
     border-color: #bfdbfe;
