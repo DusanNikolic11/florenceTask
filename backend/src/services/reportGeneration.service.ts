@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Report } from '../models/report.model';
 import { DocumentModel } from '../models/document.model';
 import { ReportInstance } from '../models/reportInstance.model';
-import { uploadToS3 } from './s3.service';
+import { uploadToS3 } from '../config/aws/s3.service';
 import { sendReportEventMessage } from '../config/kafka';
 
 interface ProcessingResult {
