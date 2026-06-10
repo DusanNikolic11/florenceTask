@@ -8,11 +8,17 @@ import {
   startEmailNotificationsRetryConsumer,
 } from './retryConsumers';
 
-export const consumerStarterRegistry: Record<ConsumerGroup, () => Promise<void>> = {
+const consumerStarterRegistry: Record<ConsumerGroup, () => Promise<void>> = {
   [ConsumerGroup.ReportProcessor]: startReportProcessorConsumer,
   [ConsumerGroup.ReportEventProcessor]: startReportStateChangedConsumer,
   [ConsumerGroup.EmailSender]: startEmailNotificationsConsumer,
   [ConsumerGroup.ReportProcessorRetry]: startReportProcessorRetryConsumer,
   [ConsumerGroup.ReportEventRetry]: startReportStateChangedRetryConsumer,
   [ConsumerGroup.EmailSenderRetry]: startEmailNotificationsRetryConsumer,
+};
+
+export const startAllConsumers = async (): Promise<void> => {
+  for (const starter of Object.values(consumerStarterRegistry)) {
+    await starter();
+  }
 };
